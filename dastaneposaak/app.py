@@ -278,3 +278,10 @@ def delete_product(product_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+app = Flask(__name__)
+
+# ... aap ka poora code ...
+
+# Yeh line Vercel ke liye ZAROORI hai:
+app = app
