@@ -7,6 +7,10 @@ app.secret_key = "super_secret_key"
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Vercel Serverless environment setup
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 def init_db():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -100,7 +104,6 @@ def buy(product_id):
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        # Direct quotes (' ') me username aur password dein
         if request.form['username'] == 'dastaneposaak' and request.form['password'] == 'dastaneposaak123':
             session['admin'] = True
             return redirect(url_for('admin_dashboard'))
@@ -114,7 +117,7 @@ def admin_logout():
     session.pop('admin', None)
     return redirect(url_for('admin_login'))
 
-# API Endpoint - Fast Background Data Fetching (Every 10 seconds)
+# API Endpoint - Fast Background Data Fetching
 @app.route('/admin/api/stats')
 def admin_api_stats():
     if not session.get('admin'):
@@ -135,7 +138,6 @@ def admin_api_stats():
     pending_orders_count = sum(1 for o in orders if o[8] == 'Pending')
     cancelled_orders_count = sum(1 for o in orders if o[8] == 'Cancelled')
     
-    # Orders JSON structure for table update
     orders_list = []
     for o in orders:
         orders_list.append({
@@ -276,12 +278,8 @@ def delete_product(product_id):
     conn.close()
     return redirect(url_for('admin_dashboard'))
 
+# Vercel entry point export
+app_instance = app
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-app = Flask(__name__)
-
-# ... aap ka poora code ...
-
-# Yeh line Vercel ke liye ZAROORI hai:
-app = app
