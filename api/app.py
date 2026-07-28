@@ -4,11 +4,19 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
-UPLOAD_FOLDER = 'static/uploads'
+
+# Absolute paths handle karne ke liye (Server crash se bachane ke liye)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'database.db')
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
+
+# Upload folder na ho to automatic create kar le
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def init_db():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # Products Table
@@ -60,7 +68,7 @@ init_db()
 
 @app.route('/')
 def index():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM products")
     products = cursor.fetchall()
@@ -82,7 +90,7 @@ def buy(product_id):
     
     delivery_charges = 200
     
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT article_no, price FROM products WHERE id = ?", (product_id,))
     prod = cursor.fetchone()
@@ -100,7 +108,6 @@ def buy(product_id):
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        # Direct quotes (' ') me username aur password dein
         if request.form['username'] == 'dastaneposaak' and request.form['password'] == 'dastaneposaak123':
             session['admin'] = True
             return redirect(url_for('admin_dashboard'))
@@ -114,13 +121,13 @@ def admin_logout():
     session.pop('admin', None)
     return redirect(url_for('admin_login'))
 
-# API Endpoint - Fast Background Data Fetching (Every 10 seconds)
+# API Endpoint - Fast Background Data Fetching
 @app.route('/admin/api/stats')
 def admin_api_stats():
     if not session.get('admin'):
         return jsonify({'error': 'Unauthorized'}), 401
         
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     cursor.execute("SELECT * FROM orders ORDER BY id DESC")
@@ -135,7 +142,6 @@ def admin_api_stats():
     pending_orders_count = sum(1 for o in orders if o[8] == 'Pending')
     cancelled_orders_count = sum(1 for o in orders if o[8] == 'Cancelled')
     
-    # Orders JSON structure for table update
     orders_list = []
     for o in orders:
         orders_list.append({
@@ -166,7 +172,7 @@ def admin_dashboard():
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
     
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM products")
     products = cursor.fetchall()
@@ -210,13 +216,18 @@ def add_product():
     description = request.form['description']
     price = request.form['price']
     sizes = request.form.get('sizes', 'Small, Medium, Large')
-    file = request.files['image']
+    file = request.files.get('image')
     
-    if file:
+    if file and file.filename != '':
         filename = file.filename
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         
-        conn = sqlite3.connect('database.db')
+        # Folder check safe-guard
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("INSERT INTO products (article_no, description, price, image, sizes) VALUES (?, ?, ?, ?, ?)",
                        (article_no, description, price, filename, sizes))
@@ -230,7 +241,7 @@ def update_announcement():
         return redirect(url_for('admin_login'))
         
     msg = request.form['announcement']
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO announcements (message) VALUES (?)", (msg,))
     conn.commit()
@@ -242,7 +253,7 @@ def update_order_status(order_id, new_status):
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
         
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("UPDATE orders SET status = ? WHERE id = ?", (new_status, order_id))
     conn.commit()
@@ -254,13 +265,15 @@ def toggle_stock(product_id):
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
         
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT status FROM products WHERE id = ?", (product_id,))
-    status = cursor.fetchone()[0]
-    new_status = 'Out of Stock' if status == 'Available' else 'Available'
-    cursor.execute("UPDATE products SET status = ? WHERE id = ?", (new_status, product_id))
-    conn.commit()
+    row = cursor.fetchone()
+    if row:
+        status = row[0]
+        new_status = 'Out of Stock' if status == 'Available' else 'Available'
+        cursor.execute("UPDATE products SET status = ? WHERE id = ?", (new_status, product_id))
+        conn.commit()
     conn.close()
     return redirect(url_for('admin_dashboard'))
 
@@ -269,7 +282,7 @@ def delete_product(product_id):
     if not session.get('admin'):
         return redirect(url_for('admin_login'))
         
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
     conn.commit()
