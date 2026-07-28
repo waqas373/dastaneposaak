@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Mobile Responsiveness Viewport Tag -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegance - Ladies Clothing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }
+        
+        .header-container { 
+            position: relative; 
+            width: 100%; 
+            height: 220px; 
+            background: url('/static/uploads/header.png') no-repeat center/cover; 
+        }
+        
+        .social-bar { 
+            position: absolute; 
+            top: 12px; 
+            right: 15px; 
+            background: rgba(255, 255, 255, 0.9); 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            display: flex;
+            gap: 12px;
+        }
+        .social-bar a { color: #d63384; font-size: 16px; text-decoration: none; }
+        
+        .marquee-ad { background: #d63384; color: white; padding: 10px 0; font-weight: bold; font-size: 14px; }
+        
+        /* Responsive Product Grid */
+        .products-grid { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            justify-content: center; 
+            padding: 20px 10px; 
+        }
+        
+        .card { 
+            background: white; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            width: calc(50% - 15px); /* Desktop & Mobile Default: 2 cards per row */
+            max-width: 280px; 
+            min-width: 140px;
+            padding: 12px; 
+            text-align: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .card img { width: 100%; height: 220px; object-fit: cover; border-radius: 6px; }
+        .card h3 { font-size: 15px; margin: 8px 0 4px 0; }
+        .card p { font-size: 12px; color: #555; margin: 4px 0; }
+        .price { color: #d63384; font-size: 16px; font-weight: bold; margin: 6px 0; }
+        .out-of-stock { color: red; font-weight: bold; margin-top: 8px; font-size: 13px; }
+        
+        .buy-btn { 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 14px; 
+            font-weight: bold; 
+            margin-top: 8px; 
+        }
+        
+        /* Responsive Popup Checkout Modal */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.6); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000; 
+            padding: 15px;
+        }
+        
+        .modal-content { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            width: 100%; 
+            max-width: 380px; 
+            text-align: left; 
+            position: relative; 
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .close-btn { position: absolute; top: 12px; right: 15px; cursor: pointer; font-size: 22px; font-weight: bold; color: #888; }
+        .modal label { font-size: 12px; font-weight: bold; color: #333; margin-top: 8px; display: block; }
+        .modal input, .modal select { width: 100%; padding: 10px; margin: 4px 0 8px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        
+        .bill-box { background: #f8f9fa; padding: 10px 12px; border-radius: 6px; margin: 10px 0; font-size: 13px; border: 1px dashed #ccc; }
+        .bill-box div { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        
+        .confirm-btn { background: #d63384; color: white; border: none; width: 100%; padding: 12px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 480px) {
+            .header-container { height: 160px; }
+            .card { width: calc(50% - 10px); padding: 8px; } /* Fits 2 cards cleanly on small mobile screens */
+            .card img { height: 170px; }
+            .card h3 { font-size: 13px; }
+            .price { font-size: 14px; }
+            .buy-btn { padding: 8px; font-size: 13px; }
+            .social-bar { padding: 4px 10px; }
+            .social-bar a { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="header-container">
+        <div class="social-bar">
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+            <a href="#"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+
+    <!-- Dynamic Marquee Advertisement -->
+    <div class="marquee-ad">
+        <marquee behavior="scroll" direction="left">
+            {{ announcement }}
+        </marquee>
+    </div>
+
+    <!-- Product Showcase -->
+    <div class="products-grid">
+        {% for prod in products %}
+        <div class="card">
+            <div>
+                <img src="{{ url_for('static', filename='uploads/' + prod[4]) }}" alt="Product Image">
+                <h3>Art # {{ prod[1] }}</h3>
+                <p>{{ prod[2] }}</p>
+                <p><strong>Sizes:</strong> {{ prod[5] }}</p>
+            </div>
+            <div>
+                <div class="price">PKR {{ prod[3] }}</div>
+                {% if prod[6] == 'Available' %}
+                    <button class="buy-btn" onclick="openCheckout('{{ prod[0] }}', '{{ prod[1] }}', '{{ prod[3] }}', '{{ prod[5] }}')">Buy Now</button>
+                {% else %}
+                    <div class="out-of-stock">OUT OF STOCK</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mobile Responsive Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeCheckout()">&times;</span>
+            <h3 style="margin: 0 0 10px 0; color:#d63384; font-size: 18px;">Checkout Order</h3>
+            <form id="checkoutForm" method="POST">
+                
+                <label>Name:</label>
+                <input type="text" name="name" required pattern="[A-Za-z\s]+" minlength="3" placeholder="Full Name" title="Letters only, min 3 characters">
+                
+                <label>Contact No (WhatsApp):</label>
+                <input type="text" name="phone" required pattern="03[0-9]{9}" maxlength="11" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="03001234567">
+                
+                <label>Delivery Address:</label>
+                <input type="text" name="address" required minlength="10" placeholder="House #, Street, Area, City">
+                
+                <label>Select Size:</label>
+                <select name="size" id="sizeSelect" required></select>
+
+                <label>Quantity:</label>
+                <input type="number" name="qty" id="qtyInput" value="1" min="1" max="10" onchange="calculateBill()" onkeyup="calculateBill()" required>
+
+                <!-- Dynamic Bill Area -->
+                <div class="bill-box">
+                    <div><span>Subtotal:</span> <span>PKR <span id="itemPrice">0</span></span></div>
+                    <div><span>Delivery Fee:</span> <span>PKR <span id="deliveryCharges">200</span></span></div>
+                    <hr style="border: 0; border-top: 1px solid #ddd; margin: 6px 0;">
+                    <div style="font-weight: bold; font-size: 14px; color: #222;">
+                        <span>Total:</span> <span>PKR <span id="totalBill">0</span></span>
+                    </div>
+                </div>
+
+                <button type="submit" class="confirm-btn">Confirm Order</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentPrice = 0;
+        const deliveryFee = 200;
+
+        function openCheckout(id, article, price, sizesStr) {
+            currentPrice = parseFloat(price);
+            document.getElementById('checkoutForm').action = "/buy/" + id;
+            
+            let sizeSelect = document.getElementById('sizeSelect');
+            sizeSelect.innerHTML = '';
+            let sizesList = sizesStr.split(',');
+            sizesList.forEach(function(s) {
+                let opt = document.createElement('option');
+                opt.value = s.trim();
+                opt.innerText = s.trim();
+                sizeSelect.appendChild(opt);
+            });
+
+            document.getElementById('qtyInput').value = 1;
+            calculateBill();
+            document.getElementById('checkoutModal').style.display = "flex";
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkoutModal').style.display = "none";
+        }
+
+        function calculateBill() {
+            let qty = parseInt(document.getElementById('qtyInput').value) || 1;
+            let subtotal = currentPrice * qty;
+            let total = subtotal + deliveryFee;
+
+            document.getElementById('itemPrice').innerText = subtotal;
+            document.getElementById('totalBill').innerText = total;
+        }
+    </script>
+
+</body>
+</html>
